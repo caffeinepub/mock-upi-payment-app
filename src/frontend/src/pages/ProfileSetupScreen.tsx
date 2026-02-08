@@ -23,16 +23,44 @@ export default function ProfileSetupScreen() {
   const { mutate: startOtp, isPending: isRequestingOtp } = useStartOtpChallenge();
   const { mutate: verifyOtp, isPending: isVerifyingOtp } = useVerifyOtp();
 
-  const handleMobileNumberChange = (value: string) => {
-    setMobileNumber(value);
-    // Reset OTP state when mobile number changes
+  // Shared helper to reset OTP state
+  const resetOtpState = () => {
     setOtpRequested(false);
     setOtpVerified(false);
     setOtpCode('');
     setDemoOtpCode('');
   };
 
+  const handleMobileNumberChange = (value: string) => {
+    setMobileNumber(value);
+    // Reset OTP state when mobile number changes
+    resetOtpState();
+  };
+
+  const handleBankChange = (value: string) => {
+    setSelectedBank(value);
+    // Reset OTP state when bank changes
+    resetOtpState();
+  };
+
+  const handleBankAccountNumberChange = (value: string) => {
+    setBankAccountNumber(value);
+    // Reset OTP state when bank account number changes
+    resetOtpState();
+  };
+
   const handleSendOtp = () => {
+    // Explicit guards with clear English error messages
+    if (!selectedBank) {
+      toast.error('Please select a bank first');
+      return;
+    }
+
+    if (!bankAccountNumber.trim()) {
+      toast.error('Please enter your bank account number');
+      return;
+    }
+
     if (!mobileNumber.trim()) {
       toast.error('Please enter a mobile number');
       return;
@@ -88,7 +116,8 @@ export default function ProfileSetupScreen() {
     });
   };
 
-  const canSendOtp = mobileNumber.trim() && !otpRequested && !isRequestingOtp;
+  // Updated condition: require bank, account number, and mobile number before allowing OTP request
+  const canSendOtp = selectedBank && bankAccountNumber.trim() && mobileNumber.trim() && !otpRequested && !isRequestingOtp;
   const canVerifyOtp = otpRequested && otpCode.trim() && !otpVerified && !isVerifyingOtp;
   const canSubmit = bankAccountNumber.trim() && mobileNumber.trim() && selectedBank && otpVerified && !isSaving;
 
@@ -115,7 +144,7 @@ export default function ProfileSetupScreen() {
                 <Building2 className="h-4 w-4" />
                 Select Bank
               </Label>
-              <Select value={selectedBank} onValueChange={setSelectedBank}>
+              <Select value={selectedBank} onValueChange={handleBankChange}>
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder="Choose your bank" />
                 </SelectTrigger>
@@ -150,7 +179,7 @@ export default function ProfileSetupScreen() {
                 type="text"
                 placeholder="Enter your account number"
                 value={bankAccountNumber}
-                onChange={(e) => setBankAccountNumber(e.target.value)}
+                onChange={(e) => handleBankAccountNumberChange(e.target.value)}
                 required
                 className="h-12"
               />
@@ -217,9 +246,9 @@ export default function ProfileSetupScreen() {
                   <Alert className="bg-blue-50 border-blue-200">
                     <Shield className="h-4 w-4 text-blue-600" />
                     <AlertDescription className="text-sm text-blue-800">
-                      <strong>Demo OTP:</strong> {demoOtpCode}
+                      <strong>Demo OTP for {selectedBank}:</strong> {demoOtpCode}
                       <br />
-                      <span className="text-xs">In production, this would be sent via SMS</span>
+                      <span className="text-xs">In production, this would be sent via SMS by your bank</span>
                     </AlertDescription>
                   </Alert>
                 )}

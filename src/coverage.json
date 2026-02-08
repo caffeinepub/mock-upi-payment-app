@@ -1,18 +1,18 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T02:34:37.628Z",
+  "generatedAt": "2026-02-08T02:40:34.520Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 3,
-    "implemented": 2,
+    "implemented": 3,
     "items": [
       {
-        "id": "REQ-1",
-        "summary": "Replace the current SIM-number verification in the Profile Setup flow with an OTP verification step tied to the entered mobile number. The user must: (1) enter/select a bank, (2) enter bank account number, (3) enter mobile number, (4) request OTP, (5) enter OTP, (6) verify OTP, and only then be allowed to submit/save the profile.",
+        "id": "REQ-4",
+        "summary": "Update the Profile Setup flow so the user must select a bank (and enter bank account number) before they can request an OTP; requesting OTP should be disabled until these fields are provided, and error messaging should clearly ask the user to select their bank before requesting OTP.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/pages/ProfileSetupScreen.tsx"
@@ -22,49 +22,34 @@
         ]
       },
       {
-        "id": "REQ-2",
-        "summary": "Add backend support for OTP challenges for mobile verification during profile linking. Provide endpoints to (a) start an OTP challenge for the caller + mobile number and (b) verify an OTP code for the caller. Enforce OTP verification in saveCallerUserProfile and linkBankAccount by requiring that the caller has successfully verified the same mobile number as the one being saved.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Update React Query hooks to support the new OTP APIs and wire them into ProfileSetupScreen so the OTP request/verify flows show loading/error states and allow retry.",
+        "id": "REQ-5",
+        "summary": "Reset OTP state when bank selection or bank account number changes so that OTP verification always corresponds to the latest entered bank details and mobile number.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
           "frontend/src/pages/ProfileSetupScreen.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/ProfileSetupScreen.tsx"
+        ]
+      },
+      {
+        "id": "REQ-6",
+        "summary": "Adjust the OTP-step helper text on ProfileSetupScreen to reflect that the OTP is associated with the selected bank (while remaining a demo OTP), without introducing any real bank/SMS integrations.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/ProfileSetupScreen.tsx"
+        ],
+        "matchedFiles": [
           "frontend/src/pages/ProfileSetupScreen.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
-    "build-template/Dockerfile",
-    "build-template/LICENSE",
-    "build-template/README.md",
-    "build-template/deploy.sh",
-    "build-template/icp.yaml",
-    "build-template/src/backend/canister.yaml",
-    "build-template/src/frontend/canister.yaml",
-    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/config.ts",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useInternetIdentity.ts",
-    "frontend/src/hooks/useQueries.ts",
     "frontend/src/pages/ProfileSetupScreen.tsx",
     "project_state.json",
     "scratch/component-selection.json",

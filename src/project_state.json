@@ -1,10 +1,12 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 3,
+  "projectStateVersion": 5,
   "summary": "New project",
   "architectural_notes": [],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Current account collection/profile linking flow appears to only accept bank account number; user expects explicit bank selection (which bank) and an OTP flow tied to the selected bank/mobile verification."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
       "id": "feature-replace-the-current-sim-number-verification-in-the-profile-setup-flow-with-an-otp-verification-step-tied-to-the-entered-mobile-number-the-user-must-1-enter-select-a-bank-2-enter-bank-account-number-3-enter-mobile-number-4-request-otp-5-enter-otp-6-verify-otp-and-only-then-be-allowed-to-submit-save-the-profile",
@@ -19,6 +21,30 @@
       "title": "Update React Query hooks to support the new OTP APIs and wire them into ProfileSetupScreen so the OTP request/verify flows show loading/error states and allow retry.",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-profile-setup-flow-so-the-user-must-select-a-bank-and-enter-bank-account-number-before-they-can-request-an-otp-requesting-otp-should-be-disabled-until-these-fields-are-provided-and-error-messaging-should-clearly-ask-the-user-to-select-their-bank-before-requesting-otp",
+      "title": "Update the Profile Setup flow so the user must select a bank (and enter bank account number) before they can request an OTP; requesting OTP should be disabled until these fields are provided, and error messaging should clearly ask the user to select their bank before requesting OTP.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-reset-otp-state-when-bank-selection-or-bank-account-number-changes-so-that-otp-verification-always-corresponds-to-the-latest-entered-bank-details-and-mobile-number",
+      "title": "Reset OTP state when bank selection or bank account number changes so that OTP verification always corresponds to the latest entered bank details and mobile number.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-adjust-the-otp-step-helper-text-on-profilesetupscreen-to-reflect-that-the-otp-is-associated-with-the-selected-bank-while-remaining-a-demo-otp-without-introducing-any-real-bank-sms-integrations",
+      "title": "Adjust the OTP-step helper text on ProfileSetupScreen to reflect that the OTP is associated with the selected bank (while remaining a demo OTP), without introducing any real bank/SMS integrations.",
+      "reqIds": [
+        "REQ-6"
       ],
       "version": 1
     }

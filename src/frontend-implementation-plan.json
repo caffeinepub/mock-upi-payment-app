@@ -1,45 +1,52 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Profile setup bank selection + OTP mobile verification",
+  "title": "Profile Setup: require bank details before OTP and bind OTP state to bank selection",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Replace SIM-number verification in Profile Setup with a bank-selection + OTP request/verify flow tied to the entered mobile number, and gate profile submission on successful OTP verification.",
+      "id": "REQ-4",
+      "summary": "Require selecting a bank and entering bank account number (plus mobile) before allowing OTP request, with clear English messaging when missing.",
       "acceptanceCriteria": [
-        "Profile setup screen includes inputs for bank selection, bank account number, and mobile number, plus OTP request + OTP entry + OTP verification controls.",
-        "The 'Continue' / submit button remains disabled until bank is selected, account number is non-empty, mobile number is non-empty, and OTP is verified successfully.",
-        "Changing the mobile number after requesting/verifying OTP resets OTP state (e.g., clears challenge/verified status and disables submit until re-verified).",
-        "All user-facing text is in English and does not rely on emoji to convey meaning.",
-        "The previous 'Device SIM' mock display and SIM mismatch logic are removed from the Profile Setup screen."
+        "On ProfileSetupScreen, the “Send OTP” button is disabled until (a) a bank is selected and (b) bank account number is non-empty and (c) mobile number is non-empty.",
+        "If the user attempts to request OTP without selecting a bank (e.g., by any alternate UI path), the UI shows an English error toast/message that explicitly says to select a bank first.",
+        "User-facing copy remains in English."
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/ProfileSetupScreen.tsx",
           "operation": "modify",
-          "description": "Remove mock 'Device SIM' generation/display and SIM mismatch verification logic. Add OTP verification UI and state: bank selection (keep existing Select), bank account number input, mobile number input, 'Send OTP' action, OTP code input, and 'Verify OTP' action. Gate 'Continue' on selected bank + non-empty account number + non-empty mobile number + otpVerified===true. Ensure changing mobile number resets OTP state (clears entered code, clears any demo code/helper text, clears verified flag, and re-disables submit). Ensure all user-facing text remains English and contains no emoji. Use existing composed UI components (Button/Input/Label/Alert/Select) without modifying any files under frontend/src/components/ui."
+          "description": "Update OTP request gating so “Send OTP” is disabled unless selectedBank is non-empty, bankAccountNumber is non-empty, and mobileNumber is non-empty (in addition to existing in-flight/requested conditions). Add explicit guard(s) inside handleSendOtp to prevent OTP requests when bank is not selected (or when required fields are missing), and show an English toast that explicitly instructs the user to select a bank first. Keep all user-facing copy in English."
         }
       ]
     },
     {
-      "id": "REQ-3",
-      "summary": "Add React Query mutations for starting and verifying OTP challenges and wire them into ProfileSetupScreen with loading/error states and demo-friendly OTP display.",
+      "id": "REQ-5",
+      "summary": "Reset OTP requested/verified/code state when selected bank or bank account number changes (in addition to existing mobile-number reset).",
       "acceptanceCriteria": [
-        "frontend/src/hooks/useQueries.ts includes new mutations/hooks for starting an OTP challenge and verifying an OTP.",
-        "ProfileSetupScreen uses the new hooks and shows appropriate disabled/loading states for 'Send OTP' and 'Verify OTP' actions.",
-        "On OTP request, the UI provides a way to proceed with verification in a demo environment (e.g., displaying the returned OTP in a toast or inline helper text), without implying real SMS delivery.",
-        "Errors from OTP request/verify are surfaced to the user in English via existing toast/alert patterns."
+        "If the user has requested an OTP and then changes the selected bank, the UI clears OTP input state (requested/verified/code/demo code) and requires requesting a new OTP.",
+        "If the user has requested an OTP and then changes the bank account number, the UI clears OTP input state (requested/verified/code/demo code) and requires requesting a new OTP.",
+        "Existing behavior remains: changing the mobile number resets OTP state."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/pages/ProfileSetupScreen.tsx",
           "operation": "modify",
-          "description": "Add React Query mutations/hooks for OTP flow using the existing backend actor methods (startOtpChallenge and verifyOtp). Include loading/error handling and surface failures via the existing toast pattern (sonner). For demo behavior, ensure the OTP-request mutation provides the OTP code to the UI in a non-SMS, explicitly demo-friendly way (e.g., expose returned code/metadata from the mutation result so the screen can show it)."
-        },
+          "description": "Introduce a shared resetOtpState helper (clearing otpRequested, otpVerified, otpCode, demoOtpCode). Keep existing reset behavior for mobile changes, and additionally call resetOtpState whenever selectedBank changes and whenever bankAccountNumber changes (via explicit onValueChange/onChange handlers). Ensure the UI forces a fresh OTP request after any of these changes."
+        }
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "summary": "Adjust OTP helper text to state the demo OTP is tied to the selected bank, without adding real integrations and while keeping existing OTP calls.",
+      "acceptanceCriteria": [
+        "The UI text near the OTP request/entry indicates the OTP is tied to the selected bank (English), while still clearly indicating demo behavior (e.g., “In production, this would be sent via SMS”).",
+        "No new third-party/bank/SMS integrations are added; OTP continues to use the existing startOtpChallenge/verifyOtp calls."
+      ],
+      "file_operations": [
         {
           "path": "frontend/src/pages/ProfileSetupScreen.tsx",
           "operation": "modify",
-          "description": "Wire new OTP hooks into the Profile Setup flow: implement 'Send OTP' and 'Verify OTP' buttons with disabled states (e.g., disable send when mobile is empty or request is pending; disable verify when no code entered or verify is pending). Show clear loading text while pending. On successful OTP request, display demo OTP info inline or via toast without implying SMS delivery. Surface errors from OTP request/verify via existing toast/alert patterns in English, and allow retry by re-enabling actions after failures."
+          "description": "Revise the helper copy near the OTP request/entry area to explicitly indicate the (demo) OTP is associated with the currently selected bank (ideally interpolating the selected bank name when available) while still stating it is a demo and that production would send via SMS. Do not add any new integrations; continue using the existing startOtpChallenge and verifyOtp flows."
         }
       ]
     }

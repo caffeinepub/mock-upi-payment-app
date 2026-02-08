@@ -1,90 +1,73 @@
 {
   "kind": "build_request",
-  "title": "Update bank account linking to include bank selection and OTP verification",
+  "title": "Require bank selection before OTP and tie OTP step to entered bank details in Profile Setup",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "Replace the current SIM-number verification in the Profile Setup flow with an OTP verification step tied to the entered mobile number. The user must: (1) enter/select a bank, (2) enter bank account number, (3) enter mobile number, (4) request OTP, (5) enter OTP, (6) verify OTP, and only then be allowed to submit/save the profile.",
+      "id": "REQ-4",
+      "text": "Update the Profile Setup flow so the user must select a bank (and enter bank account number) before they can request an OTP; requesting OTP should be disabled until these fields are provided, and error messaging should clearly ask the user to select their bank before requesting OTP.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-4"
         ],
         "quotes": [
-          "account number do not onl take which bank your account and take otp"
+          "bank account number does not take only take which bank your account and take bank side otp select bank"
         ]
       },
       "acceptanceCriteria": [
-        "Profile setup screen includes inputs for bank selection, bank account number, and mobile number, plus OTP request + OTP entry + OTP verification controls.",
-        "The 'Continue' / submit button remains disabled until bank is selected, account number is non-empty, mobile number is non-empty, and OTP is verified successfully.",
-        "Changing the mobile number after requesting/verifying OTP resets OTP state (e.g., clears challenge/verified status and disables submit until re-verified).",
-        "All user-facing text is in English and does not rely on emoji to convey meaning.",
-        "The previous 'Device SIM' mock display and SIM mismatch logic are removed from the Profile Setup screen."
+        "On ProfileSetupScreen, the “Send OTP” button is disabled until (a) a bank is selected and (b) bank account number is non-empty and (c) mobile number is non-empty.",
+        "If the user attempts to request OTP without selecting a bank (e.g., by any alternate UI path), the UI shows an English error toast/message that explicitly says to select a bank first.",
+        "User-facing copy remains in English."
       ]
     },
     {
-      "id": "REQ-2",
-      "text": "Add backend support for OTP challenges for mobile verification during profile linking. Provide endpoints to (a) start an OTP challenge for the caller + mobile number and (b) verify an OTP code for the caller. Enforce OTP verification in saveCallerUserProfile and linkBankAccount by requiring that the caller has successfully verified the same mobile number as the one being saved.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "account number do not onl take which bank your account and take otp"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Backend exposes a shared method to start an OTP challenge for the caller’s provided mobile number and returns a challenge identifier; for development/demo, it may also return the OTP code since no SMS integration is available.",
-        "Backend exposes a shared method to verify an OTP code against the active challenge for the caller and records verification state for that caller + mobile number.",
-        "Calling saveCallerUserProfile(profile) or linkBankAccount(bankAccountNumber, mobileNumber, selectedBank) without having verified an OTP for that same mobileNumber causes the call to fail with a clear error message.",
-        "OTP challenges expire after a reasonable short period (e.g., minutes) and verification fails after expiration.",
-        "No changes are made to the persisted UserProfile type layout in stable storage (i.e., OTP state is not stored inside UserProfile)."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Update React Query hooks to support the new OTP APIs and wire them into ProfileSetupScreen so the OTP request/verify flows show loading/error states and allow retry.",
+      "id": "REQ-5",
+      "text": "Reset OTP state when bank selection or bank account number changes so that OTP verification always corresponds to the latest entered bank details and mobile number.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-4"
         ],
         "quotes": [
-          "account number do not onl take which bank your account and take otp"
+          "take bank side otp select bank"
         ]
       },
       "acceptanceCriteria": [
-        "frontend/src/hooks/useQueries.ts includes new mutations/hooks for starting an OTP challenge and verifying an OTP.",
-        "ProfileSetupScreen uses the new hooks and shows appropriate disabled/loading states for 'Send OTP' and 'Verify OTP' actions.",
-        "On OTP request, the UI provides a way to proceed with verification in a demo environment (e.g., displaying the returned OTP in a toast or inline helper text), without implying real SMS delivery.",
-        "Errors from OTP request/verify are surfaced to the user in English via existing toast/alert patterns."
+        "If the user has requested an OTP and then changes the selected bank, the UI clears OTP input state (requested/verified/code/demo code) and requires requesting a new OTP.",
+        "If the user has requested an OTP and then changes the bank account number, the UI clears OTP input state (requested/verified/code/demo code) and requires requesting a new OTP.",
+        "Existing behavior remains: changing the mobile number resets OTP state."
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Adjust the OTP-step helper text on ProfileSetupScreen to reflect that the OTP is associated with the selected bank (while remaining a demo OTP), without introducing any real bank/SMS integrations.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "take bank side otp"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The UI text near the OTP request/entry indicates the OTP is tied to the selected bank (English), while still clearly indicating demo behavior (e.g., “In production, this would be sent via SMS”).",
+        "No new third-party/bank/SMS integrations are added; OTP continues to use the existing startOtpChallenge/verifyOtp calls."
       ]
     }
   ],
   "constraints": [
-    "Do not modify any files under frontend/src/components/ui or any paths listed as immutable in SYSTEM_CONTEXT (compose existing UI components instead).",
-    "Do not integrate external SMS/email/OTP providers; OTP must be simulated within the app/back end.",
-    "Keep backend architecture as a single Motoko actor in backend/main.mo; do not introduce additional backend services or databases."
+    "Do not edit files under frontend/src/components/ui (read-only).",
+    "Do not edit immutable hook files: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx."
   ],
   "nonGoals": [
-    "Implementing real SMS delivery or phone-number ownership verification via a third-party provider.",
-    "Adding new authentication methods beyond Internet Identity.",
-    "Changing the existing transaction/reward logic or transaction history behavior."
+    "Implement real bank-provided OTP delivery or integrate with any bank/SMS provider.",
+    "Add new authentication providers beyond Internet Identity.",
+    "Change backend OTP APIs or persistence format unless strictly required by the frontend flow changes above."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }
