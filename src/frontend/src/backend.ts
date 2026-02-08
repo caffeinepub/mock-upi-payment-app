@@ -139,9 +139,12 @@ export interface backendInterface {
     getTransactionHistoryByUser(user: Principal): Promise<Array<TransactionRecord>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
+    isMobileVerified(mobileNumber: string): Promise<boolean>;
     linkBankAccount(bankAccountNumber: string, mobileNumber: string, selectedBank: string): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     sendMoney(receiverMobile: string, amount: number): Promise<void>;
+    startOtpChallenge(mobileNumber: string, code: bigint): Promise<void>;
+    verifyOtp(enteredCode: bigint): Promise<void>;
 }
 import type { QRCode as _QRCode, TransactionRecord as _TransactionRecord, TransactionType as _TransactionType, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -356,6 +359,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async isMobileVerified(arg0: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.isMobileVerified(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.isMobileVerified(arg0);
+            return result;
+        }
+    }
     async linkBankAccount(arg0: string, arg1: string, arg2: string): Promise<void> {
         if (this.processError) {
             try {
@@ -395,6 +412,34 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.sendMoney(arg0, arg1);
+            return result;
+        }
+    }
+    async startOtpChallenge(arg0: string, arg1: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.startOtpChallenge(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.startOtpChallenge(arg0, arg1);
+            return result;
+        }
+    }
+    async verifyOtp(arg0: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.verifyOtp(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.verifyOtp(arg0);
             return result;
         }
     }

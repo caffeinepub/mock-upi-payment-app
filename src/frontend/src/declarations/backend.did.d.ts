@@ -53,9 +53,12 @@ export interface _SERVICE {
   >,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'isMobileVerified' : ActorMethod<[string], boolean>,
   'linkBankAccount' : ActorMethod<[string, string, string], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'sendMoney' : ActorMethod<[string, number], undefined>,
+  'startOtpChallenge' : ActorMethod<[string, bigint], undefined>,
+  'verifyOtp' : ActorMethod<[bigint], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

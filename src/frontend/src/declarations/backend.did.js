@@ -68,9 +68,12 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'isMobileVerified' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
   'linkBankAccount' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'sendMoney' : IDL.Func([IDL.Text, IDL.Float64], [], []),
+  'startOtpChallenge' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+  'verifyOtp' : IDL.Func([IDL.Nat], [], []),
 });
 
 export const idlInitArgs = [];
@@ -133,9 +136,12 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'isMobileVerified' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
     'linkBankAccount' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'sendMoney' : IDL.Func([IDL.Text, IDL.Float64], [], []),
+    'startOtpChallenge' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+    'verifyOtp' : IDL.Func([IDL.Nat], [], []),
   });
 };
 

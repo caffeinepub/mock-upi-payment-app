@@ -1,64 +1,71 @@
-import { useState, useEffect } from 'react';
-import { useSaveCallerUserProfile, useGetCategorizedBankList } from '../hooks/useQueries';
+import { useState } from 'react';
+import { useSaveCallerUserProfile, useGetCategorizedBankList, useStartOtpChallenge, useVerifyOtp } from '../hooks/useQueries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2, Phone, CheckCircle2, XCircle } from 'lucide-react';
+import { Building2, Phone, CheckCircle2, Shield } from 'lucide-react';
 import { toast } from 'sonner';
-
-// Generate a mock device SIM number (10 digits)
-const generateDeviceSIM = (): string => {
-  return Math.floor(1000000000 + Math.random() * 9000000000).toString();
-};
-
-// Get or create device SIM number
-const getDeviceSIM = (): string => {
-  const stored = localStorage.getItem('deviceSIM');
-  if (stored) {
-    return stored;
-  }
-  const newSIM = generateDeviceSIM();
-  localStorage.setItem('deviceSIM', newSIM);
-  return newSIM;
-};
 
 export default function ProfileSetupScreen() {
   const [bankAccountNumber, setBankAccountNumber] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
   const [selectedBank, setSelectedBank] = useState('');
-  const [deviceSIM, setDeviceSIM] = useState('');
-  const [simVerified, setSimVerified] = useState<boolean | null>(null);
-  const { mutate: saveProfile, isPending } = useSaveCallerUserProfile();
+  const [otpCode, setOtpCode] = useState('');
+  const [otpRequested, setOtpRequested] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [demoOtpCode, setDemoOtpCode] = useState<string>('');
+  
+  const { mutate: saveProfile, isPending: isSaving } = useSaveCallerUserProfile();
   const { data: categorizedBankList, isLoading: banksLoading } = useGetCategorizedBankList();
-
-  useEffect(() => {
-    // Get or generate device SIM on mount
-    const sim = getDeviceSIM();
-    setDeviceSIM(sim);
-  }, []);
+  const { mutate: startOtp, isPending: isRequestingOtp } = useStartOtpChallenge();
+  const { mutate: verifyOtp, isPending: isVerifyingOtp } = useVerifyOtp();
 
   const handleMobileNumberChange = (value: string) => {
     setMobileNumber(value);
-    // Reset verification status when user changes the number
-    setSimVerified(null);
+    // Reset OTP state when mobile number changes
+    setOtpRequested(false);
+    setOtpVerified(false);
+    setOtpCode('');
+    setDemoOtpCode('');
   };
 
-  const verifySIM = () => {
+  const handleSendOtp = () => {
     if (!mobileNumber.trim()) {
+      toast.error('Please enter a mobile number');
       return;
     }
 
-    // Check if entered mobile matches device SIM
-    if (mobileNumber.trim() === deviceSIM) {
-      setSimVerified(true);
-      toast.success('Device SIM verified successfully ✅');
-    } else {
-      setSimVerified(false);
-      toast.error('SIM number mismatch – cannot link account');
+    // Generate a random 6-digit OTP for demo
+    const randomOtp = Math.floor(100000 + Math.random() * 900000);
+    const otpBigInt = BigInt(randomOtp);
+
+    startOtp(
+      { mobileNumber: mobileNumber.trim(), code: otpBigInt },
+      {
+        onSuccess: () => {
+          setOtpRequested(true);
+          setDemoOtpCode(randomOtp.toString());
+        },
+      }
+    );
+  };
+
+  const handleVerifyOtp = () => {
+    if (!otpCode.trim()) {
+      toast.error('Please enter the OTP code');
+      return;
     }
+
+    const enteredOtpBigInt = BigInt(otpCode.trim());
+
+    verifyOtp(enteredOtpBigInt, {
+      onSuccess: () => {
+        setOtpVerified(true);
+      },
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -69,15 +76,8 @@ export default function ProfileSetupScreen() {
       return;
     }
 
-    // Verify SIM before submitting if not already verified
-    if (simVerified === null) {
-      verifySIM();
-      return;
-    }
-
-    // Only allow submission if SIM is verified
-    if (simVerified !== true) {
-      toast.error('Please verify your SIM number first');
+    if (!otpVerified) {
+      toast.error('Please verify your mobile number with OTP first');
       return;
     }
 
@@ -87,6 +87,10 @@ export default function ProfileSetupScreen() {
       selectedBank: selectedBank,
     });
   };
+
+  const canSendOtp = mobileNumber.trim() && !otpRequested && !isRequestingOtp;
+  const canVerifyOtp = otpRequested && otpCode.trim() && !otpVerified && !isVerifyingOtp;
+  const canSubmit = bankAccountNumber.trim() && mobileNumber.trim() && selectedBank && otpVerified && !isSaving;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 flex items-center justify-center p-6">
@@ -101,19 +105,11 @@ export default function ProfileSetupScreen() {
           </div>
           <CardTitle className="text-2xl">Link Your Bank Account</CardTitle>
           <CardDescription>
-            Enter your bank details to start sending and receiving money
+            Enter your bank details and verify your mobile number to start sending and receiving money
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Device SIM Info */}
-            <Alert className="bg-blue-50 border-blue-200">
-              <Phone className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-sm text-blue-800">
-                <strong>Device SIM:</strong> {deviceSIM}
-              </AlertDescription>
-            </Alert>
-
             <div className="space-y-2">
               <Label htmlFor="bank" className="flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
@@ -174,48 +170,78 @@ export default function ProfileSetupScreen() {
                   onChange={(e) => handleMobileNumberChange(e.target.value)}
                   required
                   className="h-12 flex-1"
+                  disabled={otpVerified}
                 />
                 <Button
                   type="button"
-                  onClick={verifySIM}
-                  disabled={!mobileNumber.trim() || simVerified !== null}
+                  onClick={handleSendOtp}
+                  disabled={!canSendOtp || otpVerified}
                   variant="outline"
-                  className="h-12 px-4"
+                  className="h-12 px-4 whitespace-nowrap"
                 >
-                  Verify
+                  {isRequestingOtp ? 'Sending...' : otpRequested ? 'Sent' : 'Send OTP'}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
                 This will be your UPI ID for receiving payments
               </p>
-
-              {/* Verification Status */}
-              {simVerified === true && (
-                <Alert className="bg-green-50 border-green-200">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <AlertDescription className="text-sm text-green-800">
-                    Device SIM verified successfully ✅
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {simVerified === false && (
-                <Alert className="bg-red-50 border-red-200">
-                  <XCircle className="h-4 w-4 text-red-600" />
-                  <AlertDescription className="text-sm text-red-800">
-                    SIM number mismatch – cannot link account
-                  </AlertDescription>
-                </Alert>
-              )}
             </div>
+
+            {otpRequested && !otpVerified && (
+              <div className="space-y-2">
+                <Label htmlFor="otp" className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Enter OTP
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="otp"
+                    type="text"
+                    placeholder="Enter 6-digit OTP"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                    maxLength={6}
+                    className="h-12 flex-1"
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleVerifyOtp}
+                    disabled={!canVerifyOtp}
+                    variant="default"
+                    className="h-12 px-4"
+                  >
+                    {isVerifyingOtp ? 'Verifying...' : 'Verify'}
+                  </Button>
+                </div>
+                {demoOtpCode && (
+                  <Alert className="bg-blue-50 border-blue-200">
+                    <Shield className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-sm text-blue-800">
+                      <strong>Demo OTP:</strong> {demoOtpCode}
+                      <br />
+                      <span className="text-xs">In production, this would be sent via SMS</span>
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
+
+            {otpVerified && (
+              <Alert className="bg-green-50 border-green-200">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-sm text-green-800">
+                  Mobile number verified successfully
+                </AlertDescription>
+              </Alert>
+            )}
 
             <Button
               type="submit"
-              disabled={isPending || !bankAccountNumber.trim() || !mobileNumber.trim() || !selectedBank || simVerified !== true}
+              disabled={!canSubmit}
               className="w-full h-12 text-base font-semibold"
               size="lg"
             >
-              {isPending ? 'Setting up...' : 'Continue'}
+              {isSaving ? 'Setting up...' : 'Continue'}
             </Button>
           </form>
         </CardContent>

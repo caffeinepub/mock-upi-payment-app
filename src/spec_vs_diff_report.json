@@ -1,0 +1,60 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-08T02:34:37.626Z",
+  "summary": "Diff adds an OTP flow to ProfileSetupScreen and new React Query hooks, plus backend state/types for OTP challenges and a migration step. However, the OTP API shape appears to differ from the BuildRequest (frontend generates/sends the OTP code to backend, and no challenge identifier return is shown). Backend enforcement/expiry behavior is not evidenced in the provided diff snippet.",
+  "missing_requirements": [
+    {
+      "id": "REQ-2",
+      "requirement": "Backend start-OTP endpoint generates an OTP challenge for caller+mobileNumber and returns a challenge identifier (and may also return the OTP code for demo).",
+      "reason": "The frontend hook calls `actor.startOtpChallenge(mobileNumber, code)` and the UI generates the OTP locally, implying the backend is not generating/returning the OTP nor returning any challenge identifier in the shown changes.",
+      "evidence": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/ProfileSetupScreen.tsx"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "OTP challenges expire after a short period and verification fails after expiration.",
+      "reason": "While `OtpChallenge` includes a `timestamp`, the diff summary does not show any expiry/TTL check logic in `startOtpChallenge`/`verifyOtp` or elsewhere.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Enforce OTP verification in `saveCallerUserProfile(profile)` and `linkBankAccount(bankAccountNumber, mobileNumber, selectedBank)` by requiring the caller has verified the same mobile number being saved/linked, otherwise fail with a clear error message.",
+      "reason": "The diff summary shows OTP state structures and frontend gating, but does not show any backend-side checks added inside `saveCallerUserProfile` or `linkBankAccount`.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Client-generated OTP code passed to backend as an argument when starting the OTP challenge.",
+      "reason": "BuildRequest specifies backend should start the challenge and (optionally) return the OTP code for demo; it does not request the client to generate the OTP and send it to the backend.",
+      "evidence": [
+        "frontend/src/pages/ProfileSetupScreen.tsx",
+        "frontend/src/hooks/useQueries.ts"
+      ]
+    },
+    {
+      "description": "Added `project_state.json` tracking feature requests/status.",
+      "reason": "Not requested by the BuildRequest; appears to be meta/project bookkeeping unrelated to the OTP/bank-linking requirements.",
+      "evidence": [
+        "project_state.json"
+      ]
+    }
+  ],
+  "confidence": 0.68,
+  "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
+    "frontend-file-summaries.txt",
+    "frontend/src/hooks/useInternetIdentity.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/pages/ProfileSetupScreen.tsx",
+    "project_state.json"
+  ]
+}

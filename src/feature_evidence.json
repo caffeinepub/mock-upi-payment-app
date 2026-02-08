@@ -1,0 +1,48 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-replace-the-current-sim-number-verification-in-the-profile-setup-flow-with-an-otp-verification-step-tied-to-the-entered-mobile-number-the-user-must-1-enter-select-a-bank-2-enter-bank-account-number-3-enter-mobile-number-4-request-otp-5-enter-otp-6-verify-otp-and-only-then-be-allowed-to-submit-save-the-profile",
+      "featureTitle": "Replace the current SIM-number verification in the Profile Setup flow with an OTP verification step tied to the entered mobile number. The user must: (1) enter/select a bank, (2) enter bank account number, (3) enter mobile number, (4) request OTP, (5) enter OTP, (6) verify OTP, and only then be allowed to submit/save the profile.",
+      "files": [
+        "frontend/src/pages/ProfileSetupScreen.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "qr-code@1.0.0",
+        "camera@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-react-query-hooks-to-support-the-new-otp-apis-and-wire-them-into-profilesetupscreen-so-the-otp-request-verify-flows-show-loading-error-states-and-allow-retry",
+      "featureTitle": "Update React Query hooks to support the new OTP APIs and wire them into ProfileSetupScreen so the OTP request/verify flows show loading/error states and allow retry.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/ProfileSetupScreen.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "qr-code@1.0.0",
+        "camera@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

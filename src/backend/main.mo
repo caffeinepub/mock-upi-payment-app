@@ -9,7 +9,10 @@ import Float "mo:core/Float";
 import Int "mo:core/Int";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
+import Migration "migration";
+import Nat "mo:core/Nat";
 
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -18,6 +21,14 @@ actor {
   let transactionRecords = Map.empty<Principal, [TransactionRecord]>();
   let balances = Map.empty<Principal, Float>();
   let qrCodes = Map.empty<Text, QRCode>();
+  let otpChallenges = Map.empty<Principal, OtpChallenge>();
+
+  public type OtpChallenge = {
+    mobileNumber : Text;
+    otpCode : Nat;
+    timestamp : Int;
+    isVerified : Bool;
+  };
 
   public type UserProfile = {
     bankAccountNumber : Text;
@@ -163,6 +174,64 @@ actor {
     categorized;
   };
 
+  public shared ({ caller }) func startOtpChallenge(mobileNumber : Text, code : Nat) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can request OTP challenges");
+    };
+
+    let challenge : OtpChallenge = {
+      mobileNumber;
+      otpCode = code;
+      timestamp = Time.now();
+      isVerified = false;
+    };
+    otpChallenges.add(caller, challenge);
+  };
+
+  public shared ({ caller }) func verifyOtp(enteredCode : Nat) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can verify OTP challenges");
+    };
+
+    switch (otpChallenges.get(caller)) {
+      case (null) { Runtime.trap("OTP challenge not found") };
+      case (?challenge) {
+        if (challenge.otpCode != enteredCode) {
+          Runtime.trap("Incorrect OTP code");
+        };
+        let verifiedChallenge = { challenge with isVerified = true };
+        otpChallenges.add(caller, verifiedChallenge);
+      };
+    };
+  };
+
+  public query ({ caller }) func isMobileVerified(mobileNumber : Text) : async Bool {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can check mobile verification status");
+    };
+
+    switch (otpChallenges.get(caller)) {
+      case (null) { false };
+      case (?challenge) {
+        challenge.mobileNumber == mobileNumber and challenge.isVerified;
+      };
+    };
+  };
+
+  func checkMobileVerifiedForAction(caller : Principal, mobileNumber : Text) {
+    switch (otpChallenges.get(caller)) {
+      case (null) { Runtime.trap("OTP challenge not found for this number") };
+      case (?challenge) {
+        if (challenge.mobileNumber != mobileNumber) {
+          Runtime.trap("Incorrect mobile number for OTP challenge");
+        };
+        if (not challenge.isVerified) {
+          Runtime.trap("Mobile number has not been verified with OTP");
+        };
+      };
+    };
+  };
+
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view profiles");
@@ -174,6 +243,8 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
+    checkMobileVerifiedForAction(caller, profile.mobileNumber);
+
     userProfiles.add(caller, profile);
     switch (balances.get(caller)) {
       case (null) { balances.add(caller, 0.0) };
@@ -192,6 +263,8 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can link bank accounts");
     };
+
+    checkMobileVerifiedForAction(caller, mobileNumber);
 
     let profile : UserProfile = {
       bankAccountNumber;
@@ -346,7 +419,7 @@ actor {
       case (?profile) { profile };
     };
 
-    if (callerProfile.mobileNumber != mobileNumber and not AccessControl.isAdmin(accessControlState, caller)) {
+    if (callerProfile.mobileNumber != mobileNumber) {
       Runtime.trap("Unauthorized: Can only access your own QR code");
     };
 
@@ -373,4 +446,3 @@ actor {
     qrCodes.values().toArray();
   };
 };
-

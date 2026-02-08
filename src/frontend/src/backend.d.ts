@@ -56,7 +56,10 @@ export interface backendInterface {
     getTransactionHistoryByUser(user: Principal): Promise<Array<TransactionRecord>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
+    isMobileVerified(mobileNumber: string): Promise<boolean>;
     linkBankAccount(bankAccountNumber: string, mobileNumber: string, selectedBank: string): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     sendMoney(receiverMobile: string, amount: number): Promise<void>;
+    startOtpChallenge(mobileNumber: string, code: bigint): Promise<void>;
+    verifyOtp(enteredCode: bigint): Promise<void>;
 }

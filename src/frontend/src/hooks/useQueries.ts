@@ -43,6 +43,59 @@ export function useSaveCallerUserProfile() {
   });
 }
 
+export function useStartOtpChallenge() {
+  const { actor } = useActor();
+
+  return useMutation({
+    mutationFn: async ({ mobileNumber, code }: { mobileNumber: string; code: bigint }) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.startOtpChallenge(mobileNumber, code);
+      return { code };
+    },
+    onSuccess: ({ code }) => {
+      toast.success(`OTP sent! Demo code: ${code}`, {
+        description: 'In production, this would be sent via SMS',
+        duration: 10000,
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to send OTP');
+    },
+  });
+}
+
+export function useVerifyOtp() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (enteredCode: bigint) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.verifyOtp(enteredCode);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mobileVerified'] });
+      toast.success('OTP verified successfully!');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to verify OTP');
+    },
+  });
+}
+
+export function useIsMobileVerified(mobileNumber: string) {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<boolean>({
+    queryKey: ['mobileVerified', mobileNumber],
+    queryFn: async () => {
+      if (!actor || !mobileNumber) return false;
+      return actor.isMobileVerified(mobileNumber);
+    },
+    enabled: !!actor && !actorFetching && !!mobileNumber,
+  });
+}
+
 export function useGetBalance() {
   const { actor, isFetching: actorFetching } = useActor();
 

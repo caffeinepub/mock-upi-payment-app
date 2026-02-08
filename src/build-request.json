@@ -1,0 +1,90 @@
+{
+  "kind": "build_request",
+  "title": "Update bank account linking to include bank selection and OTP verification",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Replace the current SIM-number verification in the Profile Setup flow with an OTP verification step tied to the entered mobile number. The user must: (1) enter/select a bank, (2) enter bank account number, (3) enter mobile number, (4) request OTP, (5) enter OTP, (6) verify OTP, and only then be allowed to submit/save the profile.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "account number do not onl take which bank your account and take otp"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Profile setup screen includes inputs for bank selection, bank account number, and mobile number, plus OTP request + OTP entry + OTP verification controls.",
+        "The 'Continue' / submit button remains disabled until bank is selected, account number is non-empty, mobile number is non-empty, and OTP is verified successfully.",
+        "Changing the mobile number after requesting/verifying OTP resets OTP state (e.g., clears challenge/verified status and disables submit until re-verified).",
+        "All user-facing text is in English and does not rely on emoji to convey meaning.",
+        "The previous 'Device SIM' mock display and SIM mismatch logic are removed from the Profile Setup screen."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Add backend support for OTP challenges for mobile verification during profile linking. Provide endpoints to (a) start an OTP challenge for the caller + mobile number and (b) verify an OTP code for the caller. Enforce OTP verification in saveCallerUserProfile and linkBankAccount by requiring that the caller has successfully verified the same mobile number as the one being saved.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "account number do not onl take which bank your account and take otp"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend exposes a shared method to start an OTP challenge for the caller’s provided mobile number and returns a challenge identifier; for development/demo, it may also return the OTP code since no SMS integration is available.",
+        "Backend exposes a shared method to verify an OTP code against the active challenge for the caller and records verification state for that caller + mobile number.",
+        "Calling saveCallerUserProfile(profile) or linkBankAccount(bankAccountNumber, mobileNumber, selectedBank) without having verified an OTP for that same mobileNumber causes the call to fail with a clear error message.",
+        "OTP challenges expire after a reasonable short period (e.g., minutes) and verification fails after expiration.",
+        "No changes are made to the persisted UserProfile type layout in stable storage (i.e., OTP state is not stored inside UserProfile)."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Update React Query hooks to support the new OTP APIs and wire them into ProfileSetupScreen so the OTP request/verify flows show loading/error states and allow retry.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "account number do not onl take which bank your account and take otp"
+        ]
+      },
+      "acceptanceCriteria": [
+        "frontend/src/hooks/useQueries.ts includes new mutations/hooks for starting an OTP challenge and verifying an OTP.",
+        "ProfileSetupScreen uses the new hooks and shows appropriate disabled/loading states for 'Send OTP' and 'Verify OTP' actions.",
+        "On OTP request, the UI provides a way to proceed with verification in a demo environment (e.g., displaying the returned OTP in a toast or inline helper text), without implying real SMS delivery.",
+        "Errors from OTP request/verify are surfaced to the user in English via existing toast/alert patterns."
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not modify any files under frontend/src/components/ui or any paths listed as immutable in SYSTEM_CONTEXT (compose existing UI components instead).",
+    "Do not integrate external SMS/email/OTP providers; OTP must be simulated within the app/back end.",
+    "Keep backend architecture as a single Motoko actor in backend/main.mo; do not introduce additional backend services or databases."
+  ],
+  "nonGoals": [
+    "Implementing real SMS delivery or phone-number ownership verification via a third-party provider.",
+    "Adding new authentication methods beyond Internet Identity.",
+    "Changing the existing transaction/reward logic or transaction history behavior."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "New project",
+  "architectural_notes": [],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-replace-the-current-sim-number-verification-in-the-profile-setup-flow-with-an-otp-verification-step-tied-to-the-entered-mobile-number-the-user-must-1-enter-select-a-bank-2-enter-bank-account-number-3-enter-mobile-number-4-request-otp-5-enter-otp-6-verify-otp-and-only-then-be-allowed-to-submit-save-the-profile",
+      "title": "Replace the current SIM-number verification in the Profile Setup flow with an OTP verification step tied to the entered mobile number. The user must: (1) enter/select a bank, (2) enter bank account number, (3) enter mobile number, (4) request OTP, (5) enter OTP, (6) verify OTP, and only then be allowed to submit/save the profile.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-react-query-hooks-to-support-the-new-otp-apis-and-wire-them-into-profilesetupscreen-so-the-otp-request-verify-flows-show-loading-error-states-and-allow-retry",
+      "title": "Update React Query hooks to support the new OTP APIs and wire them into ProfileSetupScreen so the OTP request/verify flows show loading/error states and allow retry.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Update account collection flow to ask for bank name (or bank selection) and OTP verification in addition to account number",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Add backend support for OTP challenges for mobile verification during profile linking. Provide endpoints to (a) start an OTP challenge for the caller + mobile number and (b) verify an OTP code for the caller. Enforce OTP verification in saveCallerUserProfile and linkBankAccount by requiring that the caller has successfully verified the same mobile number as the one being saved.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "status": "pending"
+    }
+  ],
+  "projectName": "Update bank account linking to include bank selection and OTP verification",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}
